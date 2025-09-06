@@ -3,14 +3,17 @@ import Link from "next/link";
 import {
   HomeIcon,
   UserIcon,
+  
   InformationCircleIcon,
   DocumentTextIcon,
   Bars3Icon,
+  Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 
 const navItems = [
   { name: "Home", href: "/", icon: HomeIcon },
   { name: "About", href: "/about", icon: InformationCircleIcon },
+  { name: "settings", href: "/settings", icon: Cog6ToothIcon },
   { name: "Contact", href: "/contact", icon: DocumentTextIcon },
   { name: "Dashboard", href: "/dashboard", icon: UserIcon },
 ];
