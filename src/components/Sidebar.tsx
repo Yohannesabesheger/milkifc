@@ -30,42 +30,52 @@ const Sidebar: React.FC = () => {
   // Auto-collapse for small screens
   useEffect(() => {
     if (windowWidth < 500) {
-      setCollapsed(true);
+      setCollapsed(true); // narrow sidebar for small screens
     } else {
-      setCollapsed(false);
+      setCollapsed(false); // full width for larger screens
     }
   }, [windowWidth]);
 
-  const sidebarWidth = collapsed ? "w-16" : "w-64";
+  const sidebarWidth = collapsed ? "4rem" : "16rem"; // 4rem = 64px, 16rem = 256px
 
   return (
-    <aside
-      className={`bg-gray-800 text-white min-h-screen p-4 transition-all duration-300 ${sidebarWidth}`}
-      style={{ overflowY: "hidden", overflowX: "auto" }}
-    >
-      {/* Collapse button */}
-      <button className="mb-6" onClick={() => setCollapsed(!collapsed)}>
-        <Bars3Icon className="w-6 h-6" />
-      </button>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside
+        className="bg-gray-800 text-white transition-all duration-300 flex-shrink-0"
+        style={{
+          width: sidebarWidth,
+          padding: "0.5rem",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Collapse button */}
+        <button className="mb-4" onClick={() => setCollapsed(!collapsed)}>
+          <Bars3Icon className="w-6 h-6" />
+        </button>
 
-      <nav className="flex flex-col space-y-2">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex items-center space-x-3 p-2 hover:bg-gray-700 rounded"
-            >
-              {/* Icon always visible */}
-              <Icon className="w-6 h-6 flex-shrink-0" />
-              {/* Text visible only on >=500px */}
-              {windowWidth >= 500 && <span>{item.name}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+        <nav className="flex flex-col space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded"
+              >
+                {/* Icon always visible */}
+                <Icon className="w-6 h-6 flex-shrink-0" />
+                {/* Text visible only on >=500px */}
+                {windowWidth >= 500 && !collapsed && <span>{item.name}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Main content */}
+    
+    </div>
   );
 };
 
