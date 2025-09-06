@@ -16,7 +16,7 @@ const navItems = [
 ];
 
 const Sidebar: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(true); // collapsed by default
   const [windowWidth, setWindowWidth] = useState<number>(0);
 
   // Track window width
@@ -27,16 +27,7 @@ const Sidebar: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-collapse for small screens
-  useEffect(() => {
-    if (windowWidth < 500) {
-      setCollapsed(true); // narrow sidebar for small screens
-    } else {
-      setCollapsed(false); // full width for larger screens
-    }
-  }, [windowWidth]);
-
-  const sidebarWidth = collapsed ? "4rem" : "16rem"; // 4rem = 64px, 16rem = 256px
+  const sidebarWidth = collapsed ? "4rem" : "16rem"; // collapsed = 64px, expanded = 256px
 
   return (
     <div className="flex min-h-screen">
@@ -45,27 +36,32 @@ const Sidebar: React.FC = () => {
         className="bg-gray-800 text-white transition-all duration-300 flex-shrink-0"
         style={{
           width: sidebarWidth,
-          padding: "0.5rem",
+          padding: 0, // remove padding to eliminate gaps
           boxSizing: "border-box",
         }}
       >
-        {/* Collapse button */}
-        <button className="mb-4" onClick={() => setCollapsed(!collapsed)}>
-          <Bars3Icon className="w-6 h-6" />
-        </button>
+        {/* Collapse button: visible only on large screens */}
+        {windowWidth >= 500 && (
+          <button
+            className="w-full p-2 text-white hover:bg-gray-700 flex justify-center"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <Bars3Icon className="w-6 h-6" />
+          </button>
+        )}
 
-        <nav className="flex flex-col space-y-2">
+        <nav className="flex flex-col mt-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded"
+                className="flex items-center space-x-2 p-2 hover:bg-gray-700"
               >
                 {/* Icon always visible */}
                 <Icon className="w-6 h-6 flex-shrink-0" />
-                {/* Text visible only on >=500px */}
+                {/* Text visible only on >=500px and when expanded */}
                 {windowWidth >= 500 && !collapsed && <span>{item.name}</span>}
               </Link>
             );
@@ -74,7 +70,9 @@ const Sidebar: React.FC = () => {
       </aside>
 
       {/* Main content */}
-    
+      <main className="flex-1 m-0 p-0">
+        {/* Your page content goes here, fully flush with sidebar */}
+      </main>
     </div>
   );
 };
