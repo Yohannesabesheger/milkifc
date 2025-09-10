@@ -49,7 +49,7 @@ const settingsOptions = [
   },
   { 
     name: "Product Lines", 
-    href: "/setting-collection/product-line-create", 
+    href: "/setting-collection/product", 
     icon: Squares2X2Icon, 
     description: "Manage product lines and categories.",
     color: "bg-indigo-100 text-indigo-600"

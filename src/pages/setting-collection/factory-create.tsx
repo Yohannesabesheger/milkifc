@@ -3,34 +3,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/lib/apiEndpoints";
 import { getAccessToken } from "@/lib/api";
+import { Company,Factory } from "@/types";
 
-type Factory = {
-  id: number;
-  name: string;
-  description: string;
-  location_name: string;
-  city: string;
-  admin_region: string;
-  latitude_point: string;
-  longitude_point: string;
-  is_operational: boolean;
-  production_capacity: number;
-  is_authorized: boolean;
-  authorization_time: string;
-  created_at: string;
-  updated_at: string;
-  inputer: number;
-  company: number;
-};
+
 
 const FactoryCreate: React.FC = () => {
   const [factories, setFactories] = useState<Factory[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [locationName, setLocationName] = useState("");
   const [city, setCity] = useState("");
   const [adminRegion, setAdminRegion] = useState("");
   const [capacity, setCapacity] = useState(0);
+  const [company, setCompany] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
@@ -43,33 +29,37 @@ const FactoryCreate: React.FC = () => {
   const [editCity, setEditCity] = useState("");
   const [editAdminRegion, setEditAdminRegion] = useState("");
   const [editCapacity, setEditCapacity] = useState(0);
+  const [editCompany, setEditCompany] = useState<number>(1);
 
-  // Fetch existing factories
+  // Fetch factories & companies
   useEffect(() => {
-    const fetchFactories = async () => {
+    const fetchData = async () => {
       setFetching(true);
       try {
         const token = getAccessToken();
         if (!token) throw new Error("No access token found");
 
-        const res = await axios.get("/api/proxy", {
-          params: { endpoint: API.FACTORIES },
-          headers: { Authorization: `JWT ${token}` },
-        });
+        const [factoriesRes, companiesRes] = await Promise.all([
+          axios.get("/api/proxy", {
+            params: { endpoint: API.FACTORIES },
+            headers: { Authorization: `JWT ${token}` },
+          }),
+          axios.get("/api/proxy", {
+            params: { endpoint: API.COMPANIES },
+            headers: { Authorization: `JWT ${token}` },
+          }),
+        ]);
 
-        setFactories(res.data);
+        setFactories(factoriesRes.data);
+        setCompanies(companiesRes.data);
       } catch (err: any) {
-        console.error("Error fetching factories:", err);
-        setError(
-          err.response?.data?.detail ||
-            err.message ||
-            "Failed to fetch factories"
-        );
+        console.error("Error fetching data:", err);
+        setError(err.response?.data?.detail || err.message || "Failed to fetch data");
       } finally {
         setFetching(false);
       }
     };
-    fetchFactories();
+    fetchData();
   }, []);
 
   // Add new factory
@@ -92,13 +82,11 @@ const FactoryCreate: React.FC = () => {
       authorization_time: new Date().toISOString(),
       created_at: new Date().toISOString(),
       inputer: 1,
-      company: 1, // default company
+      company,
     };
 
     try {
       const token = getAccessToken();
-      if (!token) throw new Error("No access token found");
-
       const res = await axios.post(
         "/api/proxy",
         { endpoint: API.FACTORIES, payload },
@@ -112,11 +100,10 @@ const FactoryCreate: React.FC = () => {
       setCity("");
       setAdminRegion("");
       setCapacity(0);
+      setCompany(1);
     } catch (err: any) {
       console.error("Error adding factory:", err);
-      setError(
-        err.response?.data?.detail || err.message || "Failed to add factory"
-      );
+      setError(err.response?.data?.detail || err.message || "Failed to add factory");
     } finally {
       setLoading(false);
     }
@@ -131,9 +118,9 @@ const FactoryCreate: React.FC = () => {
     setEditCity(factory.city);
     setEditAdminRegion(factory.admin_region);
     setEditCapacity(factory.production_capacity);
+    setEditCompany(factory.company);
   };
 
-  // Cancel edit
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
@@ -142,6 +129,7 @@ const FactoryCreate: React.FC = () => {
     setEditCity("");
     setEditAdminRegion("");
     setEditCapacity(0);
+    setEditCompany(1);
   };
 
   // Save edited factory
@@ -164,28 +152,22 @@ const FactoryCreate: React.FC = () => {
       authorization_time: new Date().toISOString(),
       created_at: new Date().toISOString(),
       inputer: 1,
-      company: 1,
+      company: editCompany,
     };
 
     try {
       const token = getAccessToken();
-      if (!token) throw new Error("No access token found");
-
       const res = await axios.put(
         "/api/proxy",
         { endpoint: `${API.FACTORIES}${id}/`, payload },
         { headers: { Authorization: `JWT ${token}` } }
       );
 
-      setFactories((prev) =>
-        prev.map((f) => (f.id === id ? res.data : f))
-      );
+      setFactories((prev) => prev.map((f) => (f.id === id ? res.data : f)));
       cancelEdit();
     } catch (err: any) {
       console.error("Error saving factory:", err);
-      setError(
-        err.response?.data?.detail || err.message || "Failed to save factory"
-      );
+      setError(err.response?.data?.detail || err.message || "Failed to save factory");
     } finally {
       setLoading(false);
     }
@@ -197,8 +179,6 @@ const FactoryCreate: React.FC = () => {
     setLoading(true);
     try {
       const token = getAccessToken();
-      if (!token) throw new Error("No access token found");
-
       await axios.delete("/api/proxy", {
         data: { endpoint: `${API.FACTORIES}${id}/` },
         headers: { Authorization: `JWT ${token}` },
@@ -207,9 +187,7 @@ const FactoryCreate: React.FC = () => {
       setFactories((prev) => prev.filter((f) => f.id !== id));
     } catch (err: any) {
       console.error("Error deleting factory:", err);
-      alert(
-        err.response?.data?.detail || err.message || "Failed to delete factory"
-      );
+      alert(err.response?.data?.detail || err.message || "Failed to delete factory");
     } finally {
       setLoading(false);
     }
@@ -219,12 +197,13 @@ const FactoryCreate: React.FC = () => {
     <main className="min-h-screen p-6 bg-gray-100">
       <h1 className="text-3xl font-bold mb-6">Manage Factories</h1>
 
-      {/* Add / Edit Factory Form */}
+      {/* Add/Edit Form */}
       <section className="mb-6 p-4 bg-white rounded shadow">
         <h2 className="text-xl font-semibold mb-4">
           {editingId ? "Edit Factory" : "Add New Factory"}
         </h2>
         {error && <div className="mb-2 text-red-600">{error}</div>}
+
         <div className="grid grid-cols-2 gap-4">
           <input
             type="text"
@@ -276,18 +255,49 @@ const FactoryCreate: React.FC = () => {
                 : setDescription(e.target.value)
             }
           />
-          <input
-            type="number"
-            placeholder="Production Capacity"
+         
+         {/* Production Capacity */}
+<div className="flex flex-col">
+  <label className="mb-1 font-medium" htmlFor={editingId ? "editCapacity" : "capacity"}>
+    Production Capacity(24/hr)
+  </label>
+  <input
+    id={editingId ? "editCapacity" : "capacity"}
+    type="number"
+    inputMode="numeric"
+    pattern="[0-9]*"
+    className="p-2 border rounded"
+    value={editingId ? editCapacity : capacity}
+    onChange={(e) =>
+      editingId
+        ? setEditCapacity(Number(e.target.value))
+        : setCapacity(Number(e.target.value))
+    }
+    // Remove spinner arrows in most browsers
+    style={{ MozAppearance: "textfield" }}
+  />
+</div>
+
+  
+
+          {/* Company dropdown */}
+          <select
             className="p-2 border rounded"
-            value={editingId ? editCapacity : capacity}
+            value={editingId ? editCompany : company}
             onChange={(e) =>
               editingId
-                ? setEditCapacity(Number(e.target.value))
-                : setCapacity(Number(e.target.value))
+                ? setEditCompany(Number(e.target.value))
+                : setCompany(Number(e.target.value))
             }
-          />
+          >
+            {companies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
+
         <div className="mt-4 flex gap-2">
           {!editingId ? (
             <button
@@ -336,6 +346,7 @@ const FactoryCreate: React.FC = () => {
                   <th className="px-4 py-2 border">Name</th>
                   <th className="px-4 py-2 border">City</th>
                   <th className="px-4 py-2 border">Region</th>
+                  <th className="px-4 py-2 border">Company</th>
                   <th className="px-4 py-2 border">Capacity</th>
                   <th className="px-4 py-2 border">Created</th>
                   <th className="px-4 py-2 border">Actions</th>
@@ -348,6 +359,10 @@ const FactoryCreate: React.FC = () => {
                     <td className="px-4 py-2 border">{f.name}</td>
                     <td className="px-4 py-2 border">{f.city}</td>
                     <td className="px-4 py-2 border">{f.admin_region}</td>
+                    <td className="px-4 py-2 border">
+                      {companies.find((c) => c.id === f.company)?.name ||
+                        `Company #${f.company}`}
+                    </td>
                     <td className="px-4 py-2 border">{f.production_capacity}</td>
                     <td className="px-4 py-2 border">
                       {new Date(f.created_at).toLocaleString()}
