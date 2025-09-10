@@ -7,8 +7,24 @@ import {
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { fetchUserInfo, logout, UserType } from "../lib/api";
 import { useRouter } from "next/router";
+import { fetchUserInfo, logout, UserType } from "../lib/api";
+import Link from "next/link";
+import {
+  HomeIcon,
+  Cog6ToothIcon,
+  DocumentTextIcon,
+  ShoppingBagIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
+
+const mainMenu = [
+  { name: "Home", href: "/", icon: HomeIcon },
+  { name: "Orders", href: "/order-collection", icon: ShoppingBagIcon },
+  { name: "Settings", href: "/settings-dashboard", icon: Cog6ToothIcon },
+  { name: "Reports", href: "/reports", icon: DocumentTextIcon },
+  { name: "Users", href: "/user-collection", icon: UserIcon },
+];
 
 const Header: React.FC = () => {
   const router = useRouter();
@@ -18,8 +34,7 @@ const Header: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Detect mobile screen
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 500);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -56,25 +71,29 @@ const Header: React.FC = () => {
   if (!user) return null;
 
   const mobileMenuItems = (
-    <div className="flex flex-col space-y-2 p-4 bg-white shadow-md rounded-md absolute right-4 mt-2 z-40">
-      <button className="flex items-center space-x-2">
-        <BellIcon className="w-5 h-5 text-gray-600" />
-        <span>Notifications</span>
+    <div className="flex flex-col space-y-2 p-4 bg-white shadow-md rounded-md absolute right-4 mt-2 z-40 w-52">
+      {mainMenu.map((item) => {
+        const Icon = item.icon;
+        const active = router.pathname === item.href;
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`flex items-center space-x-2 p-2 rounded hover:bg-gray-100 ${
+              active ? "bg-gray-100 font-semibold" : ""
+            }`}
+          >
+            <Icon className="w-5 h-5 text-gray-700" />
+            <span>{item.name}</span>
+          </Link>
+        );
+      })}
+      <button
+        onClick={handleLogout}
+        className="mt-2 px-2 py-1 text-red-500 hover:text-red-700 rounded"
+      >
+        Logout
       </button>
-      <button className="flex items-center space-x-2">
-        <ShoppingCartIcon className="w-5 h-5 text-gray-600" />
-        <span>Cart</span>
-      </button>
-      <div className="flex items-center justify-between space-x-2">
-        <UserCircleIcon className="w-6 h-6 text-gray-600" />
-        <span>{user.first_name} {user.last_name}</span>
-        <button
-          onClick={handleLogout}
-          className="text-red-500 hover:text-red-700 text-sm"
-        >
-          Logout
-        </button>
-      </div>
     </div>
   );
 
@@ -84,7 +103,7 @@ const Header: React.FC = () => {
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <Image src="/logo.png" alt="Logo" width={32} height={32} />
-          <span className="font-bold text-lg text-gray-800">MILKI FOOD</span>
+          <span className="font-bold text-lg text-gray-800">MILKI FOOD COMPLEX</span>
         </div>
 
         {/* Desktop Menu */}
@@ -123,13 +142,9 @@ const Header: React.FC = () => {
         {isMobile && (
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 bg-gray-200 rounded"
+            className="p-2 bg-gray-200 rounded"
           >
-            {menuOpen ? (
-              <XMarkIcon className="w-6 h-6" />
-            ) : (
-              <Bars3Icon className="w-6 h-6" />
-            )}
+            {menuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
           </button>
         )}
       </div>
