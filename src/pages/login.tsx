@@ -29,8 +29,8 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded shadow-md w-full max-w-md"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Admin Login</h2>
-        
+        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+
         {error && <div className="mb-4 text-red-600">{error}</div>}
 
         <input
@@ -39,7 +39,7 @@ export default function LoginPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="w-full mb-4 p-3 border rounded"
-          disabled={loading} // Disable while loading
+          disabled={loading}
         />
 
         <input
@@ -48,16 +48,19 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full mb-6 p-3 border rounded"
-          disabled={loading} // Disable while loading
+          disabled={loading}
         />
 
         <button
           type="submit"
-          className={`w-full py-3 rounded text-white ${
+          className={`w-full py-3 rounded text-white flex items-center justify-center gap-2 ${
             loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
           }`}
-          disabled={loading} // Disable while loading
+          disabled={loading}
         >
+          {loading && (
+            <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          )}
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>

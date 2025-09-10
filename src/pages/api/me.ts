@@ -18,7 +18,6 @@ export default async function handler(
   }
 
   try {
-    console.log("➡️ Proxy request to Django /auth/users/me/");
 
     const response = await axios.get<UserType>(API.ME, {
       headers: { Authorization: `JWT ${token}` },
