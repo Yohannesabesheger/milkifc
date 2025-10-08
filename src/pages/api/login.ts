@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios, { AxiosError } from "axios";
+import { API } from "@/lib/apiEndpoints";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -9,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log("➡️ Proxy request to Django:", req.body);
 
-    const response = await axios.post("https://m.besheger.com/auth/jwt/create", req.body);
+    const response = await axios.post(API.LOGIN, req.body);
 
     console.log("⬅️ Response from Django:", response.data);
 

@@ -3,20 +3,21 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { getAccessToken } from "@/lib/api";
 import { API } from "@/lib/apiEndpoints";
+import { Product } from "@/types";
 
-type Product = {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  category: number;
-  unit_of_measure: string;
-  status: string;
-  is_authorized: boolean;
-  authorization_time: string | null;
-  created_at: string;
-  updated_at: string;
-};
+// type Product = {
+//   id: number;
+//   code: string;
+//   name: string;
+//   description: string;
+//   category: number;
+//   unit_of_measure: string;
+//   status: string;
+//   is_authorized: boolean;
+//   authorization_time: string | null;
+//   created_at: string;
+//   updated_at: string;
+// };
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -207,8 +208,8 @@ const ProductsPage: React.FC = () => {
                 <th className="border px-3 py-2">Description</th>
                 <th className="border px-3 py-2">Unit</th>
                 <th className="border px-3 py-2">Status</th>
-                <th className="border px-3 py-2">Authorized</th>
-                <th className="border px-3 py-2">Category</th>
+                {/* <th className="border px-3 py-2">Authorized</th>
+                <th className="border px-3 py-2">Category</th> */}
                 <th className="border px-3 py-2">Created</th>
                 <th className="border px-3 py-2">Updated</th>
                 <th className="border px-3 py-2">Actions</th>
@@ -217,13 +218,13 @@ const ProductsPage: React.FC = () => {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-100">
-                  <td className="border px-3 py-2">{p.code}</td>
+                  <td className="border px-3 py-2">{p.id}</td>
                   <td className="border px-3 py-2">{p.name}</td>
                   <td className="border px-3 py-2">{p.description}</td>
                   <td className="border px-3 py-2">{p.unit_of_measure}</td>
                   <td className="border px-3 py-2">{p.status}</td>
-                  <td className="border px-3 py-2">{p.is_authorized ? "Yes" : "No"}</td>
-                  <td className="border px-3 py-2">{p.category}</td>
+                  {/* <td className="border px-3 py-2">{p.is_authorized ? "Yes" : "No"}</td>
+                  <td className="border px-3 py-2">{p.category}</td> */}
                   <td className="border px-3 py-2">{new Date(p.created_at).toLocaleString()}</td>
                   <td className="border px-3 py-2">{new Date(p.updated_at).toLocaleString()}</td>
                   <td className="border px-3 py-2 flex space-x-2">
