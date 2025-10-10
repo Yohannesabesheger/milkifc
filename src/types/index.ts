@@ -1,36 +1,6 @@
-export type Company = {
-  id: number;
-  name: string;
-  description: string;
-  customer: number;
-  logo_url?: string;
-  company_status: string;
-  created_at: string;
-  updated_at: string;
-};
 
 
-export type Factory = {
-  id: number;
-  name: string;
-  description: string;
-  location_name: string;
-  city: string;
-  admin_region: string;
-  latitude_point: string;
-  longitude_point: string;
-  is_operational: boolean;
-  production_capacity: number;
-  is_authorized: boolean;
-  authorization_time: string;
-  created_at: string;
-  updated_at: string;
-  inputer: number;
-  company: number;
-};
-
-
-export type Warehouse = {
+export interface Warehouse {
   id: number;
   capacity: number;
   status: string;
@@ -42,20 +12,77 @@ export type Warehouse = {
   factory: number;
 };
 
-
-export type Product = {
-  id: number;
-  code: string;
+export interface AdminRegion {
+  id: string;
   name: string;
+  code: string;
   description: string;
-  category: number;
-  unit_of_measure: string;
   status: string;
-  is_authorized: boolean;
-  authorization_time: string | null;
   created_at: string;
   updated_at: string;
-  company: number;
-  authorizer: number;
-  inputer: number;
-};
+}
+
+export interface City {
+  id: string;
+  name: string;
+  admin_region: AdminRegion;
+  description: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  description: string;
+  logo_url: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  unit_price: number;
+  unit_of_measure: string;
+  package_size: string;
+  package_name: string;
+  status: 'active' | 'inactive' | string;
+  factory: string;
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+
+export interface Factory {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  unique_location: string;
+  capacity: number | null;
+  status: string;
+  company: Company;
+  city: City;
+  admin_region: AdminRegion;
+  created_at: string;
+  updated_at: string;
+}
+
+
+export interface Inventory {
+  id: string;
+  product: string;
+  warehouse: string;
+  quantity: number;
+  last_updated: string; // ISO timestamp
+  remarks: string;
+  locked_amount: number;
+  unit_price: number;
+  total_value: number | null;
+  minimum_threshold: number;
+  created_at: string; // ISO timestamp
+  updated_at: string; // ISO timestamp
+}
+

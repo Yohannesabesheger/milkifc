@@ -3,17 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/lib/apiEndpoints";
 import { getAccessToken } from "@/lib/api";
-
-type Company = {
-  id: number;
-  name: string;
-  description: string;
-  customer: number;
-  logo_url?: string;
-  company_status: string;
-  created_at: string;
-  updated_at: string;
-};
+import { Company } from "@/types";
 
 const CompanyCreate: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -22,7 +12,7 @@ const CompanyCreate: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
@@ -245,7 +235,7 @@ const CompanyCreate: React.FC = () => {
                   <th className="px-4 py-2 border">ID</th>
                   <th className="px-4 py-2 border">Name</th>
                   <th className="px-4 py-2 border">Description</th>
-                  <th className="px-4 py-2 border">Customer</th>
+                  
                   <th className="px-4 py-2 border">Status</th>
                   <th className="px-4 py-2 border">Created</th>
                   <th className="px-4 py-2 border">Actions</th>
@@ -257,8 +247,8 @@ const CompanyCreate: React.FC = () => {
                     <td className="px-4 py-2 border">{c.id}</td>
                     <td className="px-4 py-2 border">{c.name}</td>
                     <td className="px-4 py-2 border">{c.description}</td>
-                    <td className="px-4 py-2 border">{c.customer}</td>
-                    <td className="px-4 py-2 border">{c.company_status}</td>
+                  
+                    <td className="px-4 py-2 border">{c.status}</td>
                     <td className="px-4 py-2 border">{new Date(c.created_at).toLocaleString()}</td>
                     <td className="px-4 py-2 border space-x-2">
                       <button

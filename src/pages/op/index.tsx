@@ -7,25 +7,26 @@ import {
   ArrowsRightLeftIcon,        // Transfers
   CubeIcon,                   // Product Management
 } from "@heroicons/react/24/outline";
+import { ArrowDownIcon, ArrowUpDownIcon } from "lucide-react";
 
 const operations = [
+  // {
+  //   name: "Order Placements",
+  //   href: "/orders/create",
+  //   icon: ClipboardDocumentCheckIcon,
+  //   description: "Place new purchase or sales orders with suppliers and customers.",
+  //   color: "bg-gradient-to-r from-blue-500 to-indigo-600 text-white",
+  // },
   {
-    name: "Order Placements",
-    href: "/orders/create",
-    icon: ClipboardDocumentCheckIcon,
-    description: "Place new purchase or sales orders with suppliers and customers.",
-    color: "bg-gradient-to-r from-blue-500 to-indigo-600 text-white",
-  },
-  {
-    name: "New Stock",
-    href: "/stocks/add",
-    icon: ArrowUpTrayIcon,
+    name: "New Item",
+    href: "/op/incoming",
+    icon: ArrowDownIcon,
     description: "Register new stock arrivals and update warehouse inventory.",
     color: "bg-gradient-to-r from-green-500 to-emerald-600 text-white",
   },
   {
     name: "Transfers",
-    href: "/stocks/transfers",
+    href: "/op/transfers",
     icon: ArrowsRightLeftIcon,
     description: "Move stock between warehouses or factory units.",
     color: "bg-gradient-to-r from-yellow-500 to-orange-600 text-white",
