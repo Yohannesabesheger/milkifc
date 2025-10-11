@@ -32,6 +32,19 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { name: "Home", href: "/", icon: HomeIcon },
+ {
+    name: "Purchase Orders",
+    href: "/po",
+    icon: Factory,
+    children: [
+      { name: "Place Orders", href: "/po/po", icon: ActivityIcon },
+      // { name: "Order Placements", href: "/operations/orders", icon: ShoppingBasket },
+      // { name: "New Stock", href: "/operations/new-stock", icon: Package },
+      // { name: "Transfers", href: "/operations/transfers", icon: Truck },
+   
+   
+    ],
+  },
   {
     name: "Operations",
     href: "/dashbords/operations",

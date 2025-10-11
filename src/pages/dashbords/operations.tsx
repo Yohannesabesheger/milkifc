@@ -4,8 +4,8 @@ import { Factory, Package, RefreshCw } from "lucide-react";
 
 const operationsSubmenus = [
   {
-    name: "New Stock",
-    href: "/op/new-stock",
+    name: "Inventory",
+    href: "/op/",
     icon: Package,
     description: "Add and manage new incoming stock.",
   },
