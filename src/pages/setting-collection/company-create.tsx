@@ -1,4 +1,5 @@
-// pages/company-create.tsx
+"use client";
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API } from "@/lib/apiEndpoints";
@@ -7,16 +8,29 @@ import { Company } from "@/types";
 
 const CompanyCreate: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch existing companies
+  // Form fields for adding
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [status, setStatus] = useState<"active" | "inactive">("active");
+
+  // Form editing state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFields, setEditFields] = useState({
+    name: "",
+    description: "",
+    logo_url: "",
+    status: "active" as "active" | "inactive",
+  });
+
+  const isWarehouseImplementer = true;
+
+  // Fetch companies
   useEffect(() => {
     const fetchCompanies = async () => {
       setFetching(true);
@@ -31,7 +45,7 @@ const CompanyCreate: React.FC = () => {
 
         setCompanies(res.data);
       } catch (err: any) {
-        console.error("Error fetching companies:", err);
+        console.error(err);
         setError(err.response?.data?.detail || err.message || "Failed to fetch companies");
       } finally {
         setFetching(false);
@@ -40,7 +54,6 @@ const CompanyCreate: React.FC = () => {
     fetchCompanies();
   }, []);
 
-  // Add new company
   const handleAddCompany = async () => {
     if (!name) return;
     setLoading(true);
@@ -49,59 +62,8 @@ const CompanyCreate: React.FC = () => {
     const payload = {
       name,
       description,
-      customer: 1, // default customer
-      logo_url: "",
-      company_status: "ACTIVE",
-      created_at: new Date().toISOString(), // default current datetime
-    };
-
-    try {
-      const token = getAccessToken();
-      if (!token) throw new Error("No access token found");
-
-      const res = await axios.post(
-        "/api/proxy",
-        { endpoint: API.COMPANIES, payload },
-        { headers: { Authorization: `JWT ${token}` } }
-      );
-
-      setCompanies((prev) => [...prev, res.data]);
-      setName("");
-      setDescription("");
-    } catch (err: any) {
-      console.error("Error adding company:", err);
-      setError(err.response?.data?.detail || err.message || "Failed to add company");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Start editing
-  const startEdit = (company: Company) => {
-    setEditingId(company.id);
-    setEditName(company.name);
-    setEditDescription(company.description);
-  };
-
-  // Cancel edit
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditName("");
-    setEditDescription("");
-  };
-
-  // Save edited company
-  const saveEdit = async (id: number) => {
-    if (!editName) return;
-    setLoading(true);
-    setError("");
-
-    const payload = {
-      name: editName,
-      description: editDescription,
-      customer: 1, // default
-      logo_url: "",
-      company_status: "ACTIVE",
+      logo_url: logoUrl,
+      status,
       created_at: new Date().toISOString(),
     };
 
@@ -109,38 +71,66 @@ const CompanyCreate: React.FC = () => {
       const token = getAccessToken();
       if (!token) throw new Error("No access token found");
 
-      const res = await axios.put(
-        "/api/proxy",
-        { endpoint: `${API.COMPANIES}${id}/`, payload },
-        { headers: { Authorization: `JWT ${token}` } }
-      );
-
-      setCompanies((prev) => prev.map((c) => (c.id === id ? res.data : c)));
-      cancelEdit();
+      const res = await axios.post("/api/proxy", { endpoint: API.COMPANIES, payload }, { headers: { Authorization: `JWT ${token}` }});
+      setCompanies((prev) => [...prev, res.data]);
+      setName(""); setDescription(""); setLogoUrl(""); setStatus("active");
+      setShowForm(false);
     } catch (err: any) {
-      console.error("Error saving company:", err);
+      console.error(err);
+      setError(err.response?.data?.detail || err.message || "Failed to add company");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEdit = (company: Company) => {
+    setEditingId(company.id);
+    setEditFields({
+      name: company.name,
+      description: company.description,
+      logo_url: company.logo_url || "",
+      status: (company.status || "active").toLowerCase() as "active" | "inactive",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    setLoading(true);
+    setError("");
+
+    const payload = { ...editFields };
+
+    try {
+      const token = getAccessToken();
+      if (!token) throw new Error("No access token found");
+
+      const res = await axios.put("/api/proxy", {
+        endpoint: `${API.COMPANIES}${editingId}/`,
+        payload,
+      }, { headers: { Authorization: `JWT ${token}` }});
+
+      setCompanies((prev) => prev.map((c) => (c.id === editingId ? res.data : c)));
+      setEditingId(null);
+    } catch (err: any) {
+      console.error(err);
       setError(err.response?.data?.detail || err.message || "Failed to save company");
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete company
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this company?")) return;
     setLoading(true);
+
     try {
       const token = getAccessToken();
       if (!token) throw new Error("No access token found");
 
-      await axios.delete("/api/proxy", {
-        data: { endpoint: `${API.COMPANIES}${id}/` },
-        headers: { Authorization: `JWT ${token}` },
-      });
-
+      await axios.delete("/api/proxy", { data: { endpoint: `${API.COMPANIES}${id}/` }, headers: { Authorization: `JWT ${token}` }});
       setCompanies((prev) => prev.filter((c) => c.id !== id));
     } catch (err: any) {
-      console.error("Error deleting company:", err);
+      console.error(err);
       alert(err.response?.data?.detail || err.message || "Failed to delete company");
     } finally {
       setLoading(false);
@@ -148,129 +138,82 @@ const CompanyCreate: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen p-6 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">Manage Companies</h1>
+    <main className="min-h-screen p-6 bg-gray-100 flex flex-col items-center">
+      <h1 className="text-3xl font-bold mb-6">Companies</h1>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
 
-      {/* Add / Edit Company Form */}
-      <section className="mb-6 p-4 bg-white rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">
-          {editingId ? "Edit Company" : "Add New Company"}
-        </h2>
-        {error && <div className="mb-2 text-red-600">{error}</div>}
-        <div className="flex flex-col space-y-3">
-          <input
-            type="text"
-            placeholder="Company Name"
-            className="p-2 border rounded"
-            value={editingId ? editName : name}
-            onChange={(e) =>
-              editingId ? setEditName(e.target.value) : setName(e.target.value)
-            }
-            disabled={loading}
-          />
-          <textarea
-            placeholder="Description"
-            className="p-2 border rounded"
-            value={editingId ? editDescription : description}
-            onChange={(e) =>
-              editingId ? setEditDescription(e.target.value) : setDescription(e.target.value)
-            }
-            disabled={loading}
-          />
-          {!editingId && (
-            <button
-              className={`px-4 py-2 text-white rounded flex items-center justify-center gap-2 ${
-                loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-              }`}
-              onClick={handleAddCompany}
-              disabled={loading}
-            >
-              {loading && (
-                <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-              )}
-              {loading ? "Adding..." : "Add Company"}
-            </button>
-          )}
-          {editingId && (
-            <div className="flex space-x-2">
-              <button
-                className={`px-4 py-2 text-white rounded flex items-center justify-center gap-2 ${
-                  loading ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
-                }`}
-                onClick={() => saveEdit(editingId)}
-                disabled={loading}
-              >
-                {loading && (
-                  <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                )}
-                {loading ? "Saving..." : "Save"}
-              </button>
-              <button
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                onClick={cancelEdit}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+      {/* Show form toggle for warehouse implementers */}
+      {isWarehouseImplementer && (
+        <button onClick={() => setShowForm(prev => !prev)} className="mb-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          {showForm ? "Close Form" : "Add Company"}
+        </button>
+      )}
+
+      {/* Add / Edit Form */}
+      {showForm && (
+        <section className="bg-white shadow rounded-lg p-6 w-96 mb-6">
+          <h2 className="text-xl font-semibold mb-4">{editingId ? "Edit Company" : "Add New Company"}</h2>
+          <input className="w-full p-2 border rounded mb-2" placeholder="Name" value={editingId ? editFields.name : name} onChange={e => editingId ? setEditFields(prev => ({ ...prev, name: e.target.value })) : setName(e.target.value)} disabled={loading}/>
+          <input className="w-full p-2 border rounded mb-2" placeholder="Logo URL" value={editingId ? editFields.logo_url : logoUrl} onChange={e => editingId ? setEditFields(prev => ({ ...prev, logo_url: e.target.value })) : setLogoUrl(e.target.value)} disabled={loading}/>
+          <textarea className="w-full p-2 border rounded mb-2" placeholder="Description" value={editingId ? editFields.description : description} onChange={e => editingId ? setEditFields(prev => ({ ...prev, description: e.target.value })) : setDescription(e.target.value)} disabled={loading}/>
+          <select className="w-full p-2 border rounded mb-2" value={editingId ? editFields.status : status} onChange={e => editingId ? setEditFields(prev => ({ ...prev, status: e.target.value as "active" | "inactive" })) : setStatus(e.target.value as "active" | "inactive")}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <button onClick={editingId ? saveEdit : handleAddCompany} disabled={loading} className={`w-full px-4 py-2 text-white rounded ${loading ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}`}>
+            {loading ? (editingId ? "Saving..." : "Adding...") : (editingId ? "Save" : "Add Company")}
+          </button>
+        </section>
+      )}
+
+      {/* Company Cards */}
+      {fetching ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="w-12 h-12 border-4 border-blue-600 border-dashed rounded-full animate-spin"></div>
         </div>
-      </section>
-
-      {/* Existing Companies Table */}
-      <section className="p-4 bg-white rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">Existing Companies</h2>
-
-        {fetching ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-12 h-12 border-4 border-blue-600 border-dashed rounded-full animate-spin"></div>
-          </div>
-        ) : companies.length === 0 ? (
-          <p>No companies yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full table-auto border-collapse">
-              <thead>
-                <tr className="bg-gray-200 text-left">
-                  <th className="px-4 py-2 border">ID</th>
-                  <th className="px-4 py-2 border">Name</th>
-                  <th className="px-4 py-2 border">Description</th>
-                  
-                  <th className="px-4 py-2 border">Status</th>
-                  <th className="px-4 py-2 border">Created</th>
-                  <th className="px-4 py-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border">{c.id}</td>
-                    <td className="px-4 py-2 border">{c.name}</td>
-                    <td className="px-4 py-2 border">{c.description}</td>
-                  
-                    <td className="px-4 py-2 border">{c.status}</td>
-                    <td className="px-4 py-2 border">{new Date(c.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-2 border space-x-2">
-                      <button
-                        className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                        onClick={() => startEdit(c)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                        onClick={() => handleDelete(c.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      ) : companies.length === 0 ? (
+        <p className="text-gray-600">No companies available.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+          {companies.map((c) => (
+            <div key={c.id} className="bg-white rounded-lg shadow p-6 w-80 flex flex-col justify-between">
+              {editingId === c.id ? (
+                <div className="flex flex-col space-y-2">
+                  <input className="p-2 border rounded" value={editFields.name} onChange={e => setEditFields(prev => ({ ...prev, name: e.target.value }))} disabled={loading}/>
+                  <input className="p-2 border rounded" value={editFields.logo_url} onChange={e => setEditFields(prev => ({ ...prev, logo_url: e.target.value }))} disabled={loading}/>
+                  <textarea className="p-2 border rounded" value={editFields.description} onChange={e => setEditFields(prev => ({ ...prev, description: e.target.value }))} disabled={loading}/>
+                  <select className="p-2 border rounded" value={editFields.status} onChange={e => setEditFields(prev => ({ ...prev, status: e.target.value as "active" | "inactive" }))}>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={saveEdit} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+                    <button onClick={() => setEditingId(null)} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <h3 className="text-xl font-semibold mb-2">{c.name}</h3>
+                  {c.logo_url ? (
+                    <img src={c.logo_url} alt={c.name} className="w-full h-32 object-contain mb-2 rounded"/>
+                  ) : (
+                    <div className="w-full h-32 bg-gray-100 flex items-center justify-center mb-2 rounded text-gray-400">No Logo</div>
+                  )}
+                  <p className="text-gray-600 mb-1">{c.description}</p>
+                  <p className="text-sm text-gray-500">Status: {c.status}</p>
+                  <p className="text-sm text-gray-500">Created: {new Date(c.created_at).toLocaleString()}</p>
+                  {isWarehouseImplementer && (
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => startEdit(c)} className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">Edit</button>
+                      <button onClick={() => handleDelete(c.id)} className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 };

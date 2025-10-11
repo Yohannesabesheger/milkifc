@@ -1,16 +1,16 @@
 
 
 export interface Warehouse {
-  id: number;
+  id: string;
+  factory: string; // could later be expanded to a Factory type
+  name: string;
+  description: string;
+  location: string;
   capacity: number;
-  status: string;
-  is_authorized: boolean;
-  authorization_time: string | null;
+  status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
-  authorized_by: number;
-  factory: number;
-};
+}
 
 export interface AdminRegion {
   id: string;

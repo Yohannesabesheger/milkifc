@@ -1,102 +1,132 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { ProductForm, ProductList } from "@/components/products";
+import { Product } from "@/types";
 import axios from "axios";
 import { getAccessToken } from "@/lib/api";
-import { API } from "@/lib/apiEndpoints";
+import { INVENTORY_ENDPOINTS } from "@/lib/apiEndpoints";
 
-type Product = {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  category: number;
-  unit_of_measure: string;
-  status: string;
-  is_authorized: boolean;
-  authorization_time: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-const ProductsDashboard: React.FC = () => {
+export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const token = getAccessToken();
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axios.get("/api/proxy", {
+        params: { endpoint: INVENTORY_ENDPOINTS.PRODUCTS },
+        headers: { Authorization: `JWT ${token}` },
+      });
+      setProducts(res.data);
+    } catch (err: any) {
+      console.error("Error fetching products:", err);
+      setError(err.response?.data?.detail || "Failed to fetch products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!token) return;
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get("/api/proxy", {
-          params: { endpoint: API.PRODUCTS },
-          headers: { Authorization: `JWT ${token}` },
-        });
-        setProducts(res.data);
-      } catch (err: any) {
-        console.error("Error fetching products:", err);
-        setError("Failed to fetch products");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
+    if (token) fetchProducts();
   }, [token]);
 
-  return (
-    <main className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Products Dashboard</h1>
+  const handleSubmit = async (data: Product) => {
+    try {
+      if (editingProduct) {
+        await axios.put(
+          "/api/proxy",
+          { endpoint: `${INVENTORY_ENDPOINTS.PRODUCTS}${data.id}/`, payload: data },
+          { headers: { Authorization: `JWT ${token}` } }
+        );
+        setProducts((prev) => prev.map((p) => (p.id === data.id ? data : p)));
+      } else {
+        const res = await axios.post(
+          "/api/proxy",
+          { endpoint: INVENTORY_ENDPOINTS.PRODUCTS, payload: data },
+          { headers: { Authorization: `JWT ${token}` } }
+        );
+        setProducts((prev) => [...prev, res.data]);
+      }
+      setEditingProduct(null);
+      setShowForm(false);
+    } catch (err: any) {
+      console.error("Error saving product:", err);
+      alert(err.response?.data?.detail || "Failed to save product. Try again later.");
+    }
+  };
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-      {loading ? (
-        <p>Loading products...</p>
-      ) : products.length === 0 ? (
-        <p>No products available.</p>
-      ) : (
-        <div className="overflow-x-auto bg-white shadow rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Authorized</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Updated</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {products.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-3">{p.code}</td>
-                  <td className="px-6 py-3 font-semibold">{p.name}</td>
-                  <td className="px-6 py-3">{p.description}</td>
-                  <td className="px-6 py-3">{p.category}</td>
-                  <td className="px-6 py-3">{p.unit_of_measure}</td>
-                  <td className="px-6 py-3">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        p.status === "ACTIVE" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">{p.is_authorized ? "Yes" : "No"}</td>
-                  <td className="px-6 py-3">{new Date(p.created_at).toLocaleString()}</td>
-                  <td className="px-6 py-3">{new Date(p.updated_at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete("/api/proxy", {
+        headers: { Authorization: `JWT ${token}` },
+        data: { endpoint: `${INVENTORY_ENDPOINTS.PRODUCTS}${id}/` },
+      });
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: any) {
+      console.error("Error deleting product:", err);
+      return err?.response?.data?.detail ||
+             err?.message ||
+             "Failed to delete product. Please try again later.";
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gray-100 py-6 px-4 md:px-8">
+      <div className="max-w-6xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">Products</h1>
+          <button
+            onClick={() => { setEditingProduct(null); setShowForm((prev) => !prev); }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          >
+            {showForm ? "Close Form" : "Add Product"}
+          </button>
         </div>
-      )}
+
+        {/* Error */}
+        {error && (
+          <div className="text-red-600 text-sm bg-red-100 p-2 rounded">{error}</div>
+        )}
+
+        {/* Form Section */}
+        {showForm && (
+          <section className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+              {editingProduct ? "Edit Product" : "Add Product"}
+            </h2>
+            <ProductForm
+              onSubmit={handleSubmit}
+              onCancel={() => setShowForm(false)}
+              initialData={editingProduct || undefined}
+            />
+          </section>
+        )}
+
+        {/* Products List */}
+         {/*<section >
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">Existing Products</h2>
+          <ProductList
+            products={products}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          /> 
+        </section>*/}
+
+      </div>
     </main>
   );
-};
-
-export default ProductsDashboard;
+}

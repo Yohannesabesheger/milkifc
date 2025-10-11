@@ -1,5 +1,6 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import { API } from "./apiEndpoints";
 
 export interface Tokens {
   access: string;
@@ -45,7 +46,7 @@ export function isAccessTokenValid(): boolean {
 
 // Login request to Django
 export async function login(username: string, password: string): Promise<void> {
-  const res = await axios.post("https://m.besheger.com/auth/jwt/create", {
+  const res = await axios.post(API.LOGIN, {
     username,
     password,
   });

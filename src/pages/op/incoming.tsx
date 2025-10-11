@@ -88,8 +88,8 @@ const InventoryDashboard: React.FC = () => {
                       {item.product} <br /> {item.warehouse}
                     </td>
                     <td className="px-6 py-3">{item.quantity}</td>
-                    <td className="px-6 py-3">{item.unit_price.toFixed(2)}</td>
-                    <td className="px-6 py-3">{item.locked_amount}</td>
+                    <td className="px-6 py-3">ETB-{item.unit_price.toFixed(2)}</td>
+                    <td className="px-6 py-3">ETB-{item.quantity*item.unit_price}</td>
                     <td className="px-6 py-3">{item.minimum_threshold}</td>
                     <td className="px-6 py-3">
                       {(item.unit_price * item.quantity).toFixed(2)}
