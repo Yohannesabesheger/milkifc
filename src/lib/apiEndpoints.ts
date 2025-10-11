@@ -68,4 +68,5 @@ export const INVENTORY_ENDPOINTS = {
   STOCK_TRANSFERS: `${INVENTORY_BASE}/stock-transfers/`,
 };
 
+//dev changes
 
