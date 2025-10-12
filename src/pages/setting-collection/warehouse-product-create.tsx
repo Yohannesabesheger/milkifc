@@ -1,66 +1,125 @@
-// pages/product-line-create.tsx
-import React, { useState } from "react";
+"use client";
 
-type ProductLine = { id: number; name: string; description: string };
+import { useState, useEffect } from "react";
+import { ProductForm, ProductList, ProductHeader } from "@/components/products";
+import { Product } from "@/types";
+import axios from "axios";
+import { getAccessToken } from "@/lib/api";
+import { INVENTORY_ENDPOINTS } from "@/lib/apiEndpoints";
 
-const ProductLineCreate: React.FC = () => {
-  const [lines, setLines] = useState<ProductLine[]>([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
-  const handleAddLine = () => {
-    if (!name) return;
-    const newLine = { id: Date.now(), name, description };
-    setLines([...lines, newLine]);
-    setName("");
-    setDescription("");
+  const token = getAccessToken();
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axios.get("/api/proxy", {
+        params: { endpoint: INVENTORY_ENDPOINTS.PRODUCTS },
+        headers: { Authorization: `JWT ${token}` },
+      });
+      setProducts(res.data);
+    } catch (err: any) {
+      console.error("Error fetching products:", err);
+      setError("Failed to fetch products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [token]);
+
+  const handleSubmit = async (data: Product) => {
+    try {
+      if (editingProduct) {
+        await axios.put(
+          "/api/proxy",
+          { endpoint: `${INVENTORY_ENDPOINTS.PRODUCTS}${data.id}/`, payload: data },
+          { headers: { Authorization: `JWT ${token}` } }
+        );
+        setProducts((prev) => prev.map((p) => (p.id === data.id ? data : p)));
+      } else {
+        const res = await axios.post(
+          "/api/proxy",
+          { endpoint: INVENTORY_ENDPOINTS.PRODUCTS, payload: data },
+          { headers: { Authorization: `JWT ${token}` } }
+        );
+        setProducts((prev) => [...prev, res.data]);
+      }
+      setEditingProduct(null);
+      setShowForm(false);
+    } catch (err: any) {
+      console.error("Error saving product:", err);
+      alert(err.response?.data?.detail || "Failed to save product");
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+
+    try {
+      await axios.delete("/api/proxy", {
+        headers: { Authorization: `JWT ${token}` },
+        data: { endpoint: `${INVENTORY_ENDPOINTS.PRODUCTS}${id}/` },
+      });
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: any) {
+      console.error("Error deleting product:", err);
+      alert(err.response?.data?.detail || "Failed to delete product");
+    }
   };
 
   return (
-    <main className="min-h-screen p-6 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">Add Product Line</h1>
+    <main className="bg-gray-100 min-h-screen py-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Header */}
+        <ProductHeader
+          onAdd={() => {
+            setEditingProduct(null);
+            setShowForm((prev) => !prev);
+          }}
+          onRefresh={fetchProducts}
+        />
 
-      <section className="mb-6 p-4 bg-white rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">New Product Line</h2>
-        <div className="flex flex-col space-y-3">
-          <input
-            type="text"
-            placeholder="Line Name"
-            className="p-2 border rounded"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <textarea
-            placeholder="Description"
-            className="p-2 border rounded"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <button
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={handleAddLine}
-          >
-            Add Product Line
-          </button>
-        </div>
-      </section>
-
-      <section className="p-4 bg-white rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">Existing Product Lines</h2>
-        {lines.length === 0 ? (
-          <p>No product lines yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {lines.map((l) => (
-              <li key={l.id} className="p-2 border rounded">
-                <strong>{l.name}</strong>: {l.description}
-              </li>
-            ))}
-          </ul>
+        {/* Error */}
+        {error && (
+          <div className="bg-red-100 text-red-700 p-2 rounded text-sm">{error}</div>
         )}
-      </section>
+
+        {/* Form */}
+        {showForm && (
+          <section className="bg-white shadow rounded-lg p-6">
+            <ProductForm
+              onSubmit={handleSubmit}
+              onCancel={() => setShowForm(false)}
+              initialData={editingProduct || undefined}
+            />
+          </section>
+        )}
+
+        {/* Product List */}
+        <section className="bg-white shadow rounded-lg p-6">
+          <ProductList
+            products={products}
+            loading={loading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </section>
+      </div>
     </main>
   );
-};
-
-export default ProductLineCreate;
+}
