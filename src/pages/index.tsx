@@ -96,7 +96,8 @@ import {
   CORE_ENDPOINTS,
   POSO_ENDPOINTS,
   INVENTORY_ENDPOINTS,
-} from "@/lib/apiEndpoints"; // adjust path if needed
+} from "@/lib/apiEndpoints";
+import { getAccessToken } from "@/lib/api";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -106,6 +107,9 @@ export default function Dashboard() {
     suppliers: 0,
     customers: 0,
   });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const menus = [
     { title: "Purchase Orders", icon: ClipboardList, href: "/purchase-orders" },
@@ -118,7 +122,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchStats() {
+      setLoading(true);
       try {
+        const token = getAccessToken();
+        if (!token) throw new Error("No access token found");
+
         const [
           stockRes,
           factoryRes,
@@ -126,11 +134,26 @@ export default function Dashboard() {
           supplierRes,
           customerRes,
         ] = await Promise.all([
-          axios.get(INVENTORY_ENDPOINTS.STOCKS),
-          axios.get(CORE_ENDPOINTS.FACTORIES),
-          axios.get(INVENTORY_ENDPOINTS.WAREHOUSES),
-          axios.get(POSO_ENDPOINTS.SUPPLIERS),
-          axios.get(POSO_ENDPOINTS.CUSTOMERS),
+          axios.get("/api/proxy", {
+            params: { endpoint: INVENTORY_ENDPOINTS.STOCKS },
+            headers: { Authorization: `JWT ${token}` },
+          }),
+          axios.get("/api/proxy", {
+            params: { endpoint: CORE_ENDPOINTS.FACTORIES },
+            headers: { Authorization: `JWT ${token}` },
+          }),
+          axios.get("/api/proxy", {
+            params: { endpoint: INVENTORY_ENDPOINTS.WAREHOUSES },
+            headers: { Authorization: `JWT ${token}` },
+          }),
+          axios.get("/api/proxy", {
+            params: { endpoint: POSO_ENDPOINTS.SUPPLIERS },
+            headers: { Authorization: `JWT ${token}` },
+          }),
+          axios.get("/api/proxy", {
+            params: { endpoint: POSO_ENDPOINTS.CUSTOMERS },
+            headers: { Authorization: `JWT ${token}` },
+          }),
         ]);
 
         setStats({
@@ -140,8 +163,11 @@ export default function Dashboard() {
           suppliers: supplierRes.data.count || supplierRes.data.length || 0,
           customers: customerRes.data.count || customerRes.data.length || 0,
         });
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
+      } catch (err: any) {
+        console.error(err);
+        setError(err.response?.data?.detail || err.message || "Failed to fetch dashboard data");
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -160,19 +186,41 @@ export default function Dashboard() {
     <div className="p-6 space-y-8">
       <h1 className="text-2xl font-bold mb-4">Dashboard Overview</h1>
 
+      {error && (
+        <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded">
+          {error}
+        </div>
+      )}
+
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {statCards.map((stat, index) => (
-          <StatCard key={index} title={stat.title} value={stat.value} icon={stat.icon} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-10 h-10 border-4 border-blue-500 border-dashed rounded-full animate-spin"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {statCards.map((stat, index) => (
+            <StatCard
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Menu Section */}
       <div>
         <h2 className="text-xl font-semibold mb-3">Main Menu</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {menus.map((menu, index) => (
-            <MenuCard key={index} title={menu.title} icon={menu.icon} href={menu.href} />
+            <MenuCard
+              key={index}
+              title={menu.title}
+              icon={menu.icon}
+              href={menu.href}
+            />
           ))}
         </div>
       </div>
